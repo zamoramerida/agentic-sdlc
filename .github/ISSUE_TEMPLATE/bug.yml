@@ -1,0 +1,35 @@
+name: Bug report
+ description: Report incorrect or unexpected behavior
+ title: ""
+ labels: []
+ body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What is wrong, and who is affected?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+      description: Give the smallest safe, reproducible set of steps.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact and environment
+      description: Include version, environment, severity, and any workaround. Do not include secrets or personal data.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Logs or screenshots
+      description: Redact credentials, tokens, personal data, and confidential information before sharing.

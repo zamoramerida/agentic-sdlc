@@ -1,0 +1,33 @@
+name: Feature or improvement
+ description: Propose a change with a clear user outcome
+ title: ""
+ labels: []
+ body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Who experiences this, and what is difficult today?
+      placeholder: Describe the current problem, not a prescribed implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: What observable result would solve the problem?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List testable conditions for considering this complete.
+      placeholder: "- [ ] ..."
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints and risks
+      description: Note compatibility, security, privacy, operational, or other constraints.
