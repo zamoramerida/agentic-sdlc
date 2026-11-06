@@ -1,8 +1,8 @@
 name: Feature or improvement
- description: Propose a change with a clear user outcome
- title: ""
- labels: []
- body:
+description: Propose a change with a clear user outcome
+title: ""
+labels: []
+body:
   - type: textarea
     id: problem
     attributes:

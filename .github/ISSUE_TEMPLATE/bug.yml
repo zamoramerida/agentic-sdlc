@@ -1,8 +1,8 @@
 name: Bug report
- description: Report incorrect or unexpected behavior
- title: ""
- labels: []
- body:
+description: Report incorrect or unexpected behavior
+title: ""
+labels: []
+body:
   - type: textarea
     id: summary
     attributes:
