@@ -139,30 +139,58 @@ jobs:
               def __init__(self):
                   super().__init__()
                   self.references = []
+                  self.element_ids = set()
 
               def handle_starttag(self, tag, attrs):
+                  attributes = dict(attrs)
                   self.references.extend(
                       value for name, value in attrs
                       if name in {"href", "src"} and value
                   )
+                  if attributes.get("id"):
+                      self.element_ids.add(attributes["id"])
+                  if tag == "a" and attributes.get("name"):
+                      self.element_ids.add(attributes["name"])
 
-          parser = ReferenceParser()
-          parser.feed((site_root / "index.html").read_text(encoding="utf-8"))
+          html_documents = {}
+
+          def parse_html(path):
+              if path not in html_documents:
+                  parser = ReferenceParser()
+                  parser.feed(path.read_text(encoding="utf-8"))
+                  html_documents[path] = parser
+              return html_documents[path]
+
+          parse_html(site_root / "index.html")
           missing = []
 
-          for reference in parser.references:
+          for reference in html_documents[site_root / "index.html"].references:
               url = urlsplit(reference)
-              if url.scheme or url.netloc or not url.path:
+              if url.scheme or url.netloc:
                   continue
 
-              target = (site_root / unquote(url.path).lstrip("/")).resolve()
+              if url.path.startswith("/"):
+                  missing.append(
+                      f"{reference} (origin-relative paths are unsupported on project Pages)"
+                  )
+                  continue
+
+              target = (site_root / unquote(url.path)).resolve()
               if target != site_root and site_root not in target.parents:
                   missing.append(f"{reference} (outside site output)")
                   continue
+              if not url.path:
+                  target = site_root / "index.html"
               if target.is_dir():
                   target /= "index.html"
               if not target.is_file():
                   missing.append(reference)
+                  continue
+
+              if url.fragment and target.suffix.lower() in {".html", ".htm"}:
+                  fragment = unquote(url.fragment)
+                  if fragment not in parse_html(target).element_ids:
+                      missing.append(f"{reference} (fragment not found)")
 
           if missing:
               print("❌ Missing local site targets:")

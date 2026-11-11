@@ -11,8 +11,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: "pages"
@@ -20,6 +18,7 @@ concurrency:
 
 jobs:
   build:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     name: Build Site
     steps:
@@ -43,9 +42,13 @@ jobs:
           path: '_site'
 
   deploy:
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     name: Deploy to GitHub Pages
     needs: build

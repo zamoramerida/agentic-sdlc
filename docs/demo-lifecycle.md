@@ -111,6 +111,16 @@ The agentic SDLC demo demonstrates a disciplined workflow where:
 
 Pages will deploy artifacts uploaded by `actions/deploy-pages@v4` in the `deploy.yml` workflow.
 
+#### Production Deployment Environment (Required)
+
+The deploy job uses the `github-pages` environment. A repository administrator must restrict this environment to the `main` branch so it independently blocks deployments from feature branches:
+
+1. Go to repository **Settings → Environments** and create or open `github-pages`
+2. Under **Deployment branches and tags**, select **Selected branches and tags**
+3. Allow only the `main` branch
+
+The workflow keeps manual dispatch for recovery, but both build and deploy jobs run only for `refs/heads/main`. For recovery, select `main` when manually running the workflow. The environment restriction is a separate safeguard and must be verified by a repository administrator; this documentation does not imply it is configured.
+
 #### Branch Protection (Required)
 
 The issue-to-PR demo requires a human review and passing CI before a change can merge. Workflows report results, but do not enforce a merge gate by themselves. A repository administrator must configure branch protection or an equivalent ruleset for `main` before using this runbook:
@@ -131,7 +141,8 @@ Select the displayed check names above; `build-and-validate` is a workflow job I
 The workflows are configured with **least-privilege permissions**:
 
 - **CI workflow (`ci.yml`):** `contents: read, pull-requests: read`
-- **Deploy workflow (`deploy.yml`):** `contents: read, pages: write, id-token: write`
+- **Deploy build job (`deploy.yml`):** `contents: read`
+- **Deploy job (`deploy.yml`):** `pages: write, id-token: write`
 
 No secrets or elevated permissions are used.
 
@@ -326,8 +337,9 @@ The maintainer:
 
 The deployment workflow:
 
-1. **Triggers on push to `main`**
+1. **Triggers on push to `main` or manual dispatch**
    - Watches for changes to `demo/`, `scripts/build-site.sh`, or workflow itself
+   - Both jobs are gated to `refs/heads/main`; manual recovery must select `main`
 
 2. **Build job:**
    - Checks out `main`
@@ -561,7 +573,7 @@ Before confirming the demo is working, verify:
 **Recovery:**
 1. Verify GitHub Pages is enabled (Settings → Pages)
 2. Check Pages source is set to "GitHub Actions"
-3. Manually trigger workflow: Actions → Deploy → "Run workflow"
+3. Manually trigger workflow: Actions → Deploy → "Run workflow", selecting `main`
 4. Check logs for detailed error
 
 ### Site Deployed But Content Looks Wrong
