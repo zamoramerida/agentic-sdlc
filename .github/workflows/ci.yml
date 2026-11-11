@@ -1,0 +1,202 @@
+name: CI - Demo Site Build & Validation
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  build-and-validate:
+    runs-on: ubuntu-latest
+    name: Build & Validate Demo Site
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build demo site
+        run: bash scripts/build-site.sh
+
+      - name: Validate HTML structure
+        run: |
+          echo "🔍 Validating demo site structure..."
+          if [ ! -f "_site/index.html" ]; then
+            echo "❌ Missing index.html"
+            exit 1
+          fi
+          if [ ! -f "_site/assets/css/styles.css" ]; then
+            echo "❌ Missing styles.css"
+            exit 1
+          fi
+          if [ ! -f "_site/assets/js/script.js" ]; then
+            echo "❌ Missing script.js"
+            exit 1
+          fi
+          echo "✅ All required files present"
+
+      - name: Check HTML for common issues
+        run: |
+          echo "🔍 Checking HTML validity..."
+          if grep -q '<html lang="en">' "_site/index.html" \
+            && grep -q '<head>' "_site/index.html" \
+            && grep -q '</head>' "_site/index.html" \
+            && grep -q '<body>' "_site/index.html" \
+            && grep -q '</body>' "_site/index.html"; then
+            echo "✅ HTML structure appears valid"
+          else
+            echo "❌ HTML structure issues detected"
+            exit 1
+          fi
+
+      - name: Validate CSS
+        run: |
+          echo "🔍 Validating CSS..."
+          if grep -q 'background-color' "_site/assets/css/styles.css"; then
+            echo "✅ CSS file contains expected content"
+          else
+            echo "❌ CSS file appears empty or invalid"
+            exit 1
+          fi
+
+      - name: Validate JavaScript
+        run: |
+          echo "🔍 Validating JavaScript..."
+          if grep -q 'addEventListener' "_site/assets/js/script.js"; then
+            echo "✅ JavaScript file contains expected content"
+          else
+            echo "❌ JavaScript file appears empty or invalid"
+            exit 1
+          fi
+
+      - name: Upload site artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-site
+          path: _site/
+          retention-days: 5
+
+  check-accessibility:
+    runs-on: ubuntu-latest
+    name: Accessibility Checks
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for common accessibility issues
+        run: |
+          echo "🔍 Running basic accessibility checks..."
+          
+          # Check for alt attributes on images (if any)
+          if grep -q '<img' demo/index.html; then
+            if grep '<img' demo/index.html | grep -q 'alt='; then
+              echo "✅ Images have alt attributes"
+            else
+              echo "⚠️  Some images may be missing alt attributes"
+            fi
+          fi
+          
+          # Check for proper heading hierarchy
+          if grep -q '<h1' demo/index.html; then
+            echo "✅ Page contains H1 headings"
+          else
+            echo "❌ Missing H1 heading for accessibility"
+            exit 1
+          fi
+          
+          # Check for proper lang attribute
+          if grep -q '<html lang=' demo/index.html; then
+            echo "✅ HTML lang attribute present"
+          else
+            echo "⚠️  Missing lang attribute"
+          fi
+          
+          echo "✅ Accessibility checks passed"
+
+  check-links:
+    runs-on: ubuntu-latest
+    name: Check Links
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build demo site
+        run: bash scripts/build-site.sh
+
+      - name: Validate links in HTML
+        run: |
+          echo "🔍 Checking for broken links..."
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          from urllib.parse import unquote, urlsplit
+
+          site_root = Path("_site").resolve()
+
+          class ReferenceParser(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.references = []
+                  self.element_ids = set()
+
+              def handle_starttag(self, tag, attrs):
+                  attributes = dict(attrs)
+                  self.references.extend(
+                      value for name, value in attrs
+                      if name in {"href", "src"} and value
+                  )
+                  if attributes.get("id"):
+                      self.element_ids.add(attributes["id"])
+                  if tag == "a" and attributes.get("name"):
+                      self.element_ids.add(attributes["name"])
+
+          html_documents = {}
+
+          def parse_html(path):
+              if path not in html_documents:
+                  parser = ReferenceParser()
+                  parser.feed(path.read_text(encoding="utf-8"))
+                  html_documents[path] = parser
+              return html_documents[path]
+
+          parse_html(site_root / "index.html")
+          missing = []
+
+          for reference in html_documents[site_root / "index.html"].references:
+              url = urlsplit(reference)
+              if url.scheme or url.netloc:
+                  continue
+
+              if url.path.startswith("/"):
+                  missing.append(
+                      f"{reference} (origin-relative paths are unsupported on project Pages)"
+                  )
+                  continue
+
+              target = (site_root / unquote(url.path)).resolve()
+              if target != site_root and site_root not in target.parents:
+                  missing.append(f"{reference} (outside site output)")
+                  continue
+              if not url.path:
+                  target = site_root / "index.html"
+              if target.is_dir():
+                  target /= "index.html"
+              if not target.is_file():
+                  missing.append(reference)
+                  continue
+
+              if url.fragment and target.suffix.lower() in {".html", ".htm"}:
+                  fragment = unquote(url.fragment)
+                  if fragment not in parse_html(target).element_ids:
+                      missing.append(f"{reference} (fragment not found)")
+
+          if missing:
+              print("❌ Missing local site targets:")
+              for reference in missing:
+                  print(f"   {reference}")
+              raise SystemExit(1)
+
+          print("✅ All local links and assets exist in the published site")
+          PY
