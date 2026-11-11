@@ -122,6 +122,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Build demo site
+        run: bash scripts/build-site.sh
+
       - name: Validate links in HTML
         run: |
           echo "🔍 Checking for broken links..."
