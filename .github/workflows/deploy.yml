@@ -1,0 +1,62 @@
+name: Deploy Demo Site to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'demo/**'
+      - 'scripts/build-site.sh'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build Site
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build demo site
+        run: bash scripts/build-site.sh
+        env:
+          BUILD_OUTPUT: ./_site
+
+      - name: Validate build output
+        run: |
+          echo "✅ Validating build output..."
+          test -f _site/index.html || (echo "❌ Build failed: no index.html"; exit 1)
+          test -f _site/assets/css/styles.css || (echo "❌ Build failed: no styles.css"; exit 1)
+          test -f _site/assets/js/script.js || (echo "❌ Build failed: no script.js"; exit 1)
+          echo "✅ Build validation successful"
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    name: Deploy to GitHub Pages
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Report deployment status
+        run: |
+          echo "✅ Deployment successful!"
+          echo "📍 Site URL: ${{ steps.deployment.outputs.page_url }}"

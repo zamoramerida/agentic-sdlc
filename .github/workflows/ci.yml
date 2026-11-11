@@ -1,0 +1,147 @@
+name: CI - Demo Site Build & Validation
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  build-and-validate:
+    runs-on: ubuntu-latest
+    name: Build & Validate Demo Site
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build demo site
+        run: bash scripts/build-site.sh
+        env:
+          BUILD_OUTPUT: ./_site
+
+      - name: Validate HTML structure
+        run: |
+          echo "🔍 Validating demo site structure..."
+          if [ ! -f "_site/index.html" ]; then
+            echo "❌ Missing index.html"
+            exit 1
+          fi
+          if [ ! -f "_site/assets/css/styles.css" ]; then
+            echo "❌ Missing styles.css"
+            exit 1
+          fi
+          if [ ! -f "_site/assets/js/script.js" ]; then
+            echo "❌ Missing script.js"
+            exit 1
+          fi
+          echo "✅ All required files present"
+
+      - name: Check HTML for common issues
+        run: |
+          echo "🔍 Checking HTML validity..."
+          # Check for unclosed tags in critical sections
+          if grep -q '<html.*>.*<head' "_site/index.html" && grep -q '</body>' "_site/index.html"; then
+            echo "✅ HTML structure appears valid"
+          else
+            echo "❌ HTML structure issues detected"
+            exit 1
+          fi
+
+      - name: Validate CSS
+        run: |
+          echo "🔍 Validating CSS..."
+          if grep -q 'background-color' "_site/assets/css/styles.css"; then
+            echo "✅ CSS file contains expected content"
+          else
+            echo "❌ CSS file appears empty or invalid"
+            exit 1
+          fi
+
+      - name: Validate JavaScript
+        run: |
+          echo "🔍 Validating JavaScript..."
+          if grep -q 'addEventListener' "_site/assets/js/script.js"; then
+            echo "✅ JavaScript file contains expected content"
+          else
+            echo "❌ JavaScript file appears empty or invalid"
+            exit 1
+          fi
+
+      - name: Upload site artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-site
+          path: _site/
+          retention-days: 5
+
+  check-accessibility:
+    runs-on: ubuntu-latest
+    name: Accessibility Checks
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for common accessibility issues
+        run: |
+          echo "🔍 Running basic accessibility checks..."
+          
+          # Check for alt attributes on images (if any)
+          if grep -q '<img' demo/index.html; then
+            if grep '<img' demo/index.html | grep -q 'alt='; then
+              echo "✅ Images have alt attributes"
+            else
+              echo "⚠️  Some images may be missing alt attributes"
+            fi
+          fi
+          
+          # Check for proper heading hierarchy
+          if grep -q '<h1' demo/index.html; then
+            echo "✅ Page contains H1 headings"
+          else
+            echo "❌ Missing H1 heading for accessibility"
+            exit 1
+          fi
+          
+          # Check for proper lang attribute
+          if grep -q '<html lang=' demo/index.html; then
+            echo "✅ HTML lang attribute present"
+          else
+            echo "⚠️  Missing lang attribute"
+          fi
+          
+          echo "✅ Accessibility checks passed"
+
+  check-links:
+    runs-on: ubuntu-latest
+    name: Check Links
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate links in HTML
+        run: |
+          echo "🔍 Checking for broken links..."
+          
+          # Extract all href and src attributes
+          grep -oE '(href|src)="[^"]*"' demo/index.html | grep -oE '"[^"]*"' | tr -d '"' > /tmp/links.txt
+          
+          while IFS= read -r link; do
+            # Skip external links and anchors
+            if [[ "$link" == "http"* ]]; then
+              echo "   ℹ️  External: $link (not validated in CI)"
+            elif [[ "$link" == "#"* ]]; then
+              echo "   ✅ Anchor: $link"
+            else
+              # Check if file exists
+              if [ -f "demo/$link" ] || [ -f "$link" ]; then
+                echo "   ✅ Local: $link"
+              else
+                echo "   ⚠️  Possible missing: $link"
+              fi
+            fi
+          done < /tmp/links.txt
+          
+          echo "✅ Link validation complete"
