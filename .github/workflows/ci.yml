@@ -42,8 +42,11 @@ jobs:
       - name: Check HTML for common issues
         run: |
           echo "🔍 Checking HTML validity..."
-          # Check for unclosed tags in critical sections
-          if grep -q '<html.*>.*<head' "_site/index.html" && grep -q '</body>' "_site/index.html"; then
+          if grep -q '<html lang="en">' "_site/index.html" \
+            && grep -q '<head>' "_site/index.html" \
+            && grep -q '</head>' "_site/index.html" \
+            && grep -q '<body>' "_site/index.html" \
+            && grep -q '</body>' "_site/index.html"; then
             echo "✅ HTML structure appears valid"
           else
             echo "❌ HTML structure issues detected"
