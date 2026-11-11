@@ -28,8 +28,6 @@ jobs:
 
       - name: Build demo site
         run: bash scripts/build-site.sh
-        env:
-          BUILD_OUTPUT: ./_site
 
       - name: Validate build output
         run: |

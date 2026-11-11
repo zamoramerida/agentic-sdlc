@@ -19,8 +19,6 @@ jobs:
 
       - name: Build demo site
         run: bash scripts/build-site.sh
-        env:
-          BUILD_OUTPUT: ./_site
 
       - name: Validate HTML structure
         run: |
@@ -127,24 +125,47 @@ jobs:
       - name: Validate links in HTML
         run: |
           echo "🔍 Checking for broken links..."
-          
-          # Extract all href and src attributes
-          grep -oE '(href|src)="[^"]*"' demo/index.html | grep -oE '"[^"]*"' | tr -d '"' > /tmp/links.txt
-          
-          while IFS= read -r link; do
-            # Skip external links and anchors
-            if [[ "$link" == "http"* ]]; then
-              echo "   ℹ️  External: $link (not validated in CI)"
-            elif [[ "$link" == "#"* ]]; then
-              echo "   ✅ Anchor: $link"
-            else
-              # Check if file exists
-              if [ -f "demo/$link" ] || [ -f "$link" ]; then
-                echo "   ✅ Local: $link"
-              else
-                echo "   ⚠️  Possible missing: $link"
-              fi
-            fi
-          done < /tmp/links.txt
-          
-          echo "✅ Link validation complete"
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          from urllib.parse import unquote, urlsplit
+
+          site_root = Path("_site").resolve()
+
+          class ReferenceParser(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.references = []
+
+              def handle_starttag(self, tag, attrs):
+                  self.references.extend(
+                      value for name, value in attrs
+                      if name in {"href", "src"} and value
+                  )
+
+          parser = ReferenceParser()
+          parser.feed((site_root / "index.html").read_text(encoding="utf-8"))
+          missing = []
+
+          for reference in parser.references:
+              url = urlsplit(reference)
+              if url.scheme or url.netloc or not url.path:
+                  continue
+
+              target = (site_root / unquote(url.path).lstrip("/")).resolve()
+              if target != site_root and site_root not in target.parents:
+                  missing.append(f"{reference} (outside site output)")
+                  continue
+              if target.is_dir():
+                  target /= "index.html"
+              if not target.is_file():
+                  missing.append(reference)
+
+          if missing:
+              print("❌ Missing local site targets:")
+              for reference in missing:
+                  print(f"   {reference}")
+              raise SystemExit(1)
+
+          print("✅ All local links and assets exist in the published site")
+          PY

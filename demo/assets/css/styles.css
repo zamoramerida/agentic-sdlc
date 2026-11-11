@@ -154,6 +154,7 @@ section h3 {
     border-left: 4px solid var(--color-primary);
     padding-left: var(--spacing-6);
     position: relative;
+    scroll-margin-top: calc(var(--nav-height, 0px) + var(--spacing-4));
 }
 
 .phase-number {

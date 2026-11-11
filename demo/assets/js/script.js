@@ -1,5 +1,14 @@
 // Simple smooth scrolling and interactivity for the demo site
 
+const navigation = document.querySelector('.nav');
+const updateNavigationOffset = () => {
+    const height = navigation ? navigation.getBoundingClientRect().height : 0;
+    document.documentElement.style.setProperty('--nav-height', `${height}px`);
+};
+
+updateNavigationOffset();
+window.addEventListener('resize', updateNavigationOffset);
+
 document.addEventListener('DOMContentLoaded', function() {
     // Smooth scroll for navigation links
     const navLinks = document.querySelectorAll('.nav a');

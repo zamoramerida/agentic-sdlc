@@ -38,7 +38,7 @@ The agentic SDLC demo demonstrates a disciplined workflow where:
 │    ├─ Understands issue & acceptance criteria                   │
 │    ├─ Plans implementation                                      │
 │    ├─ Writes code & tests                                       │
-│    └─ Opens linked PR                                           │
+│    └─ Contributor opens linked PR                               │
 └──────────────────────────┬──────────────────────────────────────┘
                            │
                            ↓
@@ -111,20 +111,20 @@ The agentic SDLC demo demonstrates a disciplined workflow where:
 
 Pages will deploy artifacts uploaded by `actions/deploy-pages@v4` in the `deploy.yml` workflow.
 
-#### Branch Protection (Recommended)
+#### Branch Protection (Required)
 
-To enforce required checks and human review:
+The issue-to-PR demo requires a human review and passing CI before a change can merge. Workflows report results, but do not enforce a merge gate by themselves. A repository administrator must configure branch protection or an equivalent ruleset for `main` before using this runbook:
 
 1. Go to repository **Settings → Branches**
 2. Add rule for `main`
 3. **Require pull request reviews before merging:** Enable
-4. **Require code reviews:** 1 required
-5. **Require branches to be up to date:** Enable
-6. **Require status checks to pass:**
-   - `build-and-validate` (build job from CI workflow)
-   - Any other required checks
+4. **Required approvals:** 1
+5. **Require status checks to pass:**
+   - `Build & Validate Demo Site`
+   - `Accessibility Checks`
+   - `Check Links`
 
-**Note:** Branch protection is recommended but not strictly required for the demo to work; it provides a safety gate.
+Select the displayed check names above; `build-and-validate` is a workflow job ID, not the displayed status-check name. The repository settings must be inspected by an administrator to confirm this protection is active; the workflow files alone do not prove that it is configured.
 
 #### Workflow Permissions
 
@@ -174,10 +174,19 @@ The agentic SDLC demo needs [specific feature].
 
 **Using Copilot CLI:**
 ```bash
-gh copilot run "Implement issue #9: Build a minimal static demo site for GitHub Pages"
+cd /path/to/agentic-sdlc
+copilot
 ```
 
-**Or via web:**
+Authenticate through the CLI if prompted, then enter a request such as:
+
+```text
+Implement issue #9: build a minimal static demo site for GitHub Pages.
+Follow the repository instructions, verify the acceptance criteria, and prepare
+a pull request linked to the issue. Do not approve or merge the pull request.
+```
+
+**Or via GitHub.com:**
 - Open issue #9 on github.com
 - Look for Copilot or AI-assist button (if available)
 - Request implementation
@@ -188,7 +197,7 @@ gh copilot run "Implement issue #9: Build a minimal static demo site for GitHub 
 3. Copilot shows you a plan for the implementation
 4. You approve or request changes to the plan
 5. Copilot implements the changes
-6. Copilot opens a pull request linked to the issue
+6. The contributor opens a pull request with the issue link; a GitHub-hosted coding agent may open it on the contributor's behalf
 
 **Evidence of completion:**
 - PR is opened on GitHub
@@ -274,7 +283,7 @@ The reviewer:
 **PR status:**
 - Approved PRs show green checkmark ✅
 - Unapproved PRs show "Changes requested" or "Review required"
-- Required reviews are enforced if branch protection is enabled
+- Required reviews are enforced by the branch-protection rule configured above
 
 **Evidence of completion:**
 - PR shows "Approved" review
@@ -433,17 +442,16 @@ The workflows use minimal required permissions:
 - Agents can create PRs but cannot approve them
 - Agents cannot merge their own PRs
 - Only `write`/`maintain`/`admin` users can approve and merge
-- Branch protection (if enabled) enforces this
+- Branch protection configured as described above enforces this
 
-### Recommended Repository Settings
+### Repository Settings
 
 | Setting | Value | Reason |
 |---------|-------|--------|
 | Default branch | `main` | Release target |
-| Branch protection | Enabled on `main` | Enforce review gate |
+| Branch protection | Required on `main` | Enforce review gate |
 | Required reviews | 1 | Human approval |
 | Status checks | Enabled | Enforce CI pass |
-| Require branches up to date | Yes | Prevent stale merges |
 | Pages source | GitHub Actions | Deployment target |
 
 ## Verification Checklist
@@ -581,13 +589,12 @@ If the site is live but has an issue:
 **Option 1: Revert the commit (clean rollback)**
 
 ```bash
-git log --oneline main
-# Find the commit to revert
-git revert abc1234
-git push origin main
+git switch -c revert-demo-release main
+git revert <commit-sha>
+git push -u origin revert-demo-release
 ```
 
-GitHub Actions will automatically rebuild and redeploy.
+Open a pull request from the revert branch and require the same CI checks and human review before merging. GitHub Actions will rebuild and redeploy after that reviewed merge.
 
 **Option 2: Revert directly on GitHub**
 

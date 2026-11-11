@@ -49,14 +49,17 @@ Keep the demo small. No backend, no secrets.
 
 ### Option 1: Copilot CLI (Recommended)
 
-1. **Start from the repository:**
+1. **Start the CLI from the repository:**
    ```bash
-   gh copilot run "Implement issue #9: Build a minimal static demo site"
+   cd /path/to/agentic-sdlc
+   copilot
    ```
 
-2. **Or open an issue in a session:**
-   ```bash
-   gh copilot issue open zamoramerida/agentic-sdlc --issue-number 9
+2. **Authenticate if prompted**, then enter an issue-specific request:
+   ```text
+   Implement issue #9: build a minimal static demo site. Follow repository
+   instructions, verify the acceptance criteria, and prepare a linked pull
+   request. Do not approve or merge it.
    ```
 
 3. **Agent workflow:**
@@ -65,7 +68,8 @@ Keep the demo small. No backend, no secrets.
    - Plans the implementation (shows you the plan)
    - Creates code and commits changes
    - Runs tests and validation
-   - Opens a pull request linked to the issue
+   - Prepares implementation changes; contributors open a linked PR from the CLI worktree
+   - A GitHub-hosted coding agent may open a PR on the contributor's behalf
 
 ### Option 2: GitHub.com Web Interface
 
@@ -76,7 +80,8 @@ Keep the demo small. No backend, no secrets.
 
 ## What the Agent Produces
 
-The agent creates a pull request with:
+The contributor submits a pull request (or a GitHub-hosted coding agent opens one
+on their behalf) with:
 
 ✓ **Issue link** – PR description includes "Closes #N" or "Relates to #N"  
 ✓ **Focused changes** – Only the files needed for this issue  
