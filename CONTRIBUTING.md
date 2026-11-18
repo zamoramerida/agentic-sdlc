@@ -4,8 +4,8 @@ Contributions should improve the guidance or make it easier to apply, while pres
 
 ## Workflow
 
-1. **Describe the problem.** For meaningful changes, open an issue or otherwise record the user need, intended outcome, and acceptance criteria. Small typo fixes may go directly to a pull request.
-2. **Plan proportionally.** Before non-trivial edits, note affected guidance, alternatives or trade-offs, risks, and how the result will be checked. Ask maintainers about decisions that change policy or expected behavior.
+1. **Describe the problem.** For changes beyond a small, reversible edit that does not alter behavior or policy, open or identify a GitHub issue before implementation and record the user need, intended outcome, and acceptance criteria.
+2. **Plan proportionally.** Record the bounded plan, affected areas, trade-offs, risks, and verification in the issue. For higher-complexity work, use an epic with linked subtasks aligned to the implementation plan. Obtain agreement on decisions that change policy, expected behavior, or risk before proceeding. Follow the [agentic software delivery lifecycle](docs/agentic-sdlc.md#2-plan) for planning details.
 3. **Make a focused change.** Keep the diff small and coherent. Update related links, examples, and templates so the guidance remains consistent.
 4. **Verify.** Check Markdown rendering and links where practical, inspect every changed file, and confirm examples are safe and internally consistent. Report checks that could not be run.
 5. **Request review.** Explain the motivation, summarize the changes, provide verification evidence, and disclose remaining risks or uncertainty. Do not merge your own change.
