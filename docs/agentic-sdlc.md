@@ -12,9 +12,17 @@ Use this lifecycle for software changes performed with AI assistance. Scale the 
 
 ## 2. Plan
 
-For non-trivial work, record a bounded plan that names affected areas, intended behavior, dependencies, verification, and risks. Consider failure modes, compatibility, security, privacy, accessibility, observability, and rollback when relevant. Obtain human agreement for material behavior or risk decisions before implementation.
+For changes beyond a small, reversible edit that does not alter behavior or policy, create or identify a relevant GitHub issue—or the repository's configured issue tracker when it is not hosted on GitHub—and record the bounded plan there before implementation. Agents may create or update the issue when repository permissions allow. Treat it as the source of truth for the plan. Include:
 
-**Output:** an agreed plan proportional to the risk. Small, reversible changes may use a brief inline plan.
+- The problem and observable outcome, scope and affected areas, and intended approach.
+- Acceptance criteria and deliverables.
+- Dependencies, verification, and relevant risks or trade-offs.
+
+For higher-complexity work—such as multiple independently verifiable deliverables or dependent workstreams—use an epic (parent issue) with linked subtasks. The epic captures the overall outcome, scope, and cross-cutting risks or decisions; each subtask describes one independently actionable work package with its acceptance criteria, dependencies, and verification. Derive the agent's implementation plan from this breakdown and keep it aligned with the issues. Link each code change to the subtask it implements, with the epic relationship maintained.
+
+Consider failure modes, compatibility, security, privacy, accessibility, observability, and rollback when relevant. Update the issue breakdown if the plan materially changes, and obtain renewed human agreement before continuing when a change affects agreed behavior or risk. Do not begin implementation until the issue plan is recorded and material behavior or risk decisions have human agreement. If issue access prevents creating or identifying the required issue, stop and ask for help rather than proceeding. Small, reversible edits that do not change behavior or policy may use a brief inline plan.
+
+**Output:** a recorded issue plan, with human agreement on material behavior or risk decisions; use an epic and aligned subtasks for higher-complexity work. Small, reversible edits that do not change behavior or policy may use a brief inline plan.
 
 ## 3. Implement
 
